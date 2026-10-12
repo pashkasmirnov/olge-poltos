@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Полтос у Ольги</title>
+<style>
+  :root{
+    /* dark neon disco world — single committed theme, no light variant */
+    color-scheme:dark;
+    --bg1:#1a0b2e; --bg2:#0d0618;
+    --paper:#241240; --paper2:#1a0c30; --paper-line:#4a2d78;
+    --ink:#f5e9ff; --ink-soft:#c9a9f2;
+    --pink:#ff2ea6; --pink-l:#ff7ac7; --pink-d:#c10f7a;
+    --cyan:#2ef3ff; --cyan-l:#8ef9ff; --cyan-d:#0bb8c9;
+    --gold:#ffd23f; --gold-l:#ffe27a; --gold-d:#d9a400;
+    --purple:#8a3ffc;
+    --disco:'Arial Black','Helvetica Neue',Arial,sans-serif;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; height:100%;}
+  body{
+    font-family:var(--sans);
+    color:var(--ink);
+    background:
+      radial-gradient(120% 90% at 50% 0%, #3a1a66 0%, var(--bg1) 45%, var(--bg2) 100%);
+    min-height:100%;
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ---------- SCENE / BOOK ---------- */
+  #scene{
+    position:fixed; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    padding:14px 10px 92px;
+  }
+  #book{
+    position:relative;
+    width:100%; max-width:600px;
+    height:100%;
+    perspective:1800px;
+  }
+  .page{
+    position:absolute; inset:0;
+    display:flex; flex-direction:column;
+    background:
+      linear-gradient(165deg, var(--paper) 0%, var(--paper2) 100%);
+    border-radius:18px;
+    box-shadow:0 0 0 1px rgba(255,255,255,.06) inset, 0 18px 55px rgba(0,0,0,.6), 0 0 40px rgba(138,63,252,.25);
+    overflow:hidden;
+    opacity:0;
+    transform:translateX(60px) rotateY(-12deg) scale(.96);
+    transform-origin:left center;
+    transition:transform .62s cubic-bezier(.4,.15,.2,1), opacity .5s ease;
+    pointer-events:none;
+    backface-visibility:hidden;
+  }
+  .page.active{opacity:1; transform:none; pointer-events:auto; z-index:3;}
+  .page.prev{opacity:0; transform:translateX(-60px) rotateY(12deg) scale(.96); z-index:1;}
+  .page.next{opacity:0; transform:translateX(60px) rotateY(-12deg) scale(.96); z-index:1;}
+
+  .page::before{
+    content:""; position:absolute; inset:0; pointer-events:none; opacity:.55;
+    background-image:
+      repeating-linear-gradient(0deg, transparent 0 3px, rgba(255,255,255,.015) 3px 4px),
+      radial-gradient(120% 55% at 50% 0%, rgba(255,255,255,.07), transparent 60%);
+  }
+
+  .inner{
+    position:relative; z-index:2;
+    flex:1; min-height:0;
+    overflow-y:auto; -webkit-overflow-scrolling:touch;
+    padding:40px 20px 12px;
+    display:flex; flex-direction:column; align-items:center; text-align:center;
+  }
+  .scrollhint{
+    position:absolute; left:50%; bottom:6px; transform:translateX(-50%);
+    width:30px; height:30px; z-index:6; pointer-events:none;
+    color:var(--cyan-l); opacity:0; transition:opacity .3s;
+    filter:drop-shadow(0 0 8px rgba(46,243,255,.6));
+    animation:bounceDown 1.4s ease-in-out infinite;
+  }
+  .scrollhint.show{opacity:.85;}
+  @keyframes bounceDown{0%,100%{transform:translateX(-50%) translateY(0);}50%{transform:translateX(-50%) translateY(6px);}}
+  .inner > svg, .inner svg.float{flex-shrink:0;
+  }
+  .props{position:absolute; inset:0; z-index:1; pointer-events:none; overflow:hidden;}
+  .props svg{position:absolute; opacity:.6; filter:drop-shadow(0 0 7px rgba(0,0,0,.4));}
+  .props .p1{top:7%; left:5%; width:36px; height:36px; transform:rotate(-14deg); animation:floaty 5s ease-in-out infinite, spin 13s linear infinite;}
+  .props .p2{top:9%; right:5%; width:34px; height:23px; color:var(--gold); filter:drop-shadow(0 0 6px var(--gold)); transform:rotate(11deg); animation:floaty 4.3s ease-in-out .4s infinite;}
+  .props .p3{bottom:8%; right:6%; width:26px; height:42px; color:var(--cyan); filter:drop-shadow(0 0 6px var(--cyan)); transform:rotate(-9deg); animation:floaty 4.8s ease-in-out .8s infinite;}
+  .frame{
+    position:absolute; inset:10px; z-index:2; pointer-events:none;
+    border:1.5px solid var(--cyan);
+    border-radius:13px;
+    box-shadow:inset 0 0 0 3px rgba(46,243,255,.1), 0 0 18px rgba(46,243,255,.25);
+    opacity:.55;
+  }
+  .corner{position:absolute; width:28px; height:28px; z-index:2; pointer-events:none; color:var(--pink);}
+  .corner.tl{top:6px;left:6px;} .corner.tr{top:6px;right:6px; transform:scaleX(-1);}
+  .corner.bl{bottom:6px;left:6px; transform:scaleY(-1);} .corner.br{bottom:6px;right:6px; transform:scale(-1,-1);}
+
+  /* ---------- TYPO ---------- */
+  .kicker{
+    font-size:12px; letter-spacing:.3em; text-transform:uppercase;
+    color:var(--cyan-l); font-family:var(--sans); font-weight:700; margin:0 0 4px;
+    text-shadow:0 0 10px rgba(46,243,255,.5);
+  }
+  h1{font-family:var(--disco); font-size:34px; line-height:1.1; margin:2px 0; color:var(--ink); text-transform:uppercase; letter-spacing:.01em;}
+  h2{font-family:var(--disco); font-size:25px; line-height:1.16; margin:2px 0 8px; color:var(--pink-l); text-transform:uppercase;}
+  p{font-family:var(--sans); font-size:18.5px; line-height:1.5; margin:8px auto; color:var(--ink); max-width:26em;}
+  .lead{font-size:21px; line-height:1.4; font-weight:500;}
+  .soft{color:var(--ink-soft);}
+  .big50{
+    position:relative; display:inline-block;
+    font-family:var(--disco); font-size:140px; line-height:.86; font-weight:900;
+    letter-spacing:-3px; margin:2px 0 0;
+    background:linear-gradient(180deg,#ffffff 0%,#ffe9fb 18%,#ff9bdc 38%,#ff2ea6 58%,#8a3ffc 80%,#2ef3ff 100%);
+    -webkit-background-clip:text; background-clip:text;
+    -webkit-text-fill-color:transparent; color:transparent;
+    animation:glow50 2.4s ease-in-out infinite;
+  }
+  @keyframes glow50{
+    0%,100%{filter:drop-shadow(0 0 10px rgba(255,46,166,.55)) drop-shadow(0 0 22px rgba(46,243,255,.35));}
+    50%{filter:drop-shadow(0 0 22px rgba(255,46,166,.9)) drop-shadow(0 0 38px rgba(46,243,255,.6));}
+  }
+  .yearspill{
+    display:inline-block; font-family:var(--sans); font-size:15px; font-weight:800;
+    letter-spacing:.34em; text-transform:uppercase; color:#2a0b40;
+    background:linear-gradient(180deg,var(--cyan-l),var(--cyan-d));
+    padding:5px 8px 5px 14px; border-radius:20px; margin:8px 0 2px;
+    box-shadow:0 0 16px rgba(46,243,255,.5);
+  }
+  .script{color:var(--pink-l);}
+  .divider{display:flex; align-items:center; gap:10px; color:var(--pink); margin:14px 0 8px; width:100%; max-width:320px;}
+  .divider::before,.divider::after{content:""; height:1px; flex:1; background:linear-gradient(90deg,transparent,var(--pink),transparent);}
+
+  /* ---------- PHOTOS ---------- */
+  .photo{
+    display:block; width:100%; border-radius:10px; object-fit:cover;
+    box-shadow:0 8px 24px rgba(0,0,0,.5), 0 0 0 4px var(--paper), 0 0 0 6px var(--pink);
+  }
+  .frame-photo{max-width:280px; margin:4px auto;}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:12px; width:100%; max-width:440px; margin:6px 0;}
+  figcaption{font-family:var(--sans); font-size:15px; font-weight:600; color:var(--ink-soft); margin-top:5px;}
+  .cell .photo{aspect-ratio:1/1; box-shadow:0 6px 16px rgba(0,0,0,.45), 0 0 0 3px var(--paper), 0 0 0 5px var(--cyan);}
+  .tilt-l{transform:rotate(-2.5deg);} .tilt-r{transform:rotate(2.5deg);}
+  .scatter{display:flex; flex-direction:column; align-items:stretch; width:100%; max-width:420px; margin:6px 0 4px; gap:clamp(10px,2.4vh,20px);}
+  .scatter .srow{display:flex; width:100%;}
+  .scatter .srow.r1{justify-content:space-between; padding:0 1%;}
+  .scatter .srow.r2{justify-content:center;}
+  .scatter .srow.r3{justify-content:space-between; padding:0 4%;}
+  .scatter img{width:clamp(110px,34vw,152px); height:clamp(110px,34vw,152px); object-fit:cover; border-radius:12px; display:block;
+    box-shadow:0 6px 14px rgba(0,0,0,.5), 0 0 0 3px var(--paper), 0 0 0 4px var(--cyan);}
+  .scatter img.r-a{transform:rotate(-8deg);}
+  .scatter img.r-b{transform:rotate(6deg);}
+  .scatter img.r-c{transform:rotate(-3deg); width:clamp(120px,37vw,165px); height:clamp(120px,37vw,165px);}
+  .scatter img.r-d{transform:rotate(7deg);}
+  .scatter img.r-e{transform:rotate(-6deg);}
+  .fam{display:flex; flex-direction:column; gap:8px; align-items:center; width:100%; max-width:420px; margin:4px 0;}
+  .fam .row{display:flex; gap:8px; justify-content:center; align-items:center; width:100%;}
+  .fam img{border-radius:10px; display:block; object-fit:cover; object-position:50% 22%;
+    box-shadow:0 5px 14px rgba(0,0,0,.4), 0 0 0 3px var(--paper), 0 0 0 5px var(--gold);}
+  .fam .row2 img{height:clamp(150px,25vh,190px); width:47%; object-fit:cover;}
+  .fam .row1 img{width:72%; height:clamp(170px,28vh,220px);}
+
+  .hero{
+    width:100%; max-width:230px; aspect-ratio:1/1; object-fit:cover; border-radius:50%;
+    box-shadow:0 0 0 5px var(--paper), 0 0 0 9px var(--pink), 0 0 40px rgba(255,46,166,.45);
+    margin:4px 0 2px;
+  }
+
+  /* ---------- LISTS / DETAILS ---------- */
+  .checklist{list-style:none; padding:0; margin:4px 0; text-align:left; max-width:400px; width:100%;}
+  .checklist li{font-size:19px; line-height:1.4; padding:9px 0 9px 32px; position:relative; border-bottom:1px dashed var(--paper-line);}
+  .checklist li::before{content:"✦"; position:absolute; left:4px; top:6px; color:var(--cyan); font-size:15px;}
+  .info{width:100%; max-width:380px; text-align:left; margin:4px 0;}
+  .info-row{display:flex; gap:12px; align-items:flex-start; padding:8px 6px; border-bottom:1px solid var(--paper-line);}
+  .info-row .ic{flex:0 0 32px; text-align:center; font-size:22px;}
+  .info-row .tx{font-size:17.5px;}
+  .info-row .tx b{display:block; font-size:18.5px; color:var(--cyan-l);}
+  .note{font-family:var(--sans); font-size:15px; color:var(--ink-soft);}
+
+  .evt{
+    width:100%; max-width:400px; margin:2px 0; padding:13px 16px 14px;
+    text-align:center;
+    background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(138,63,252,.1));
+    border:1.5px solid var(--pink); border-radius:18px;
+    box-shadow:inset 0 0 0 3px rgba(255,46,166,.1), 0 0 24px rgba(255,46,166,.2);
+  }
+  .evt .dow{font-family:var(--sans); font-size:14px; font-weight:800; letter-spacing:.28em; text-transform:uppercase; color:var(--cyan-l);}
+  .evt .date{font-family:var(--disco); font-size:37px; font-weight:900; line-height:1.05; color:var(--ink); margin:2px 0; text-transform:uppercase;}
+  .evt .yr{font-family:var(--sans); font-size:14px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-soft);}
+  .evt .hr{height:1px; margin:8px auto; width:78%; background:linear-gradient(90deg,transparent,var(--pink),transparent);}
+  .evt .time{font-family:var(--sans); font-size:17px; line-height:1.55; color:var(--ink);}
+  .evt .time b{font-family:var(--disco); font-size:20px; color:var(--cyan-l);}
+  .evt .place{font-family:var(--disco); font-size:22px; font-weight:900; color:var(--ink); line-height:1.25; text-transform:uppercase;}
+  .evt .addr{font-family:var(--sans); font-size:15.5px; color:var(--ink-soft); margin-top:3px;}
+
+  .callout{
+    font-family:var(--sans); font-size:21px; font-weight:700; line-height:1.4;
+    color:#fff; text-wrap:balance;
+    background:linear-gradient(180deg,var(--purple),#5a1fb0);
+    border:1.5px solid var(--cyan); border-radius:16px;
+    padding:13px 18px; margin:8px 0 4px; max-width:420px; width:100%;
+    box-shadow:0 0 22px rgba(138,63,252,.4), inset 0 1px 0 rgba(255,255,255,.15);
+  }
+  .greet{
+    font-family:var(--sans); font-size:20px; font-weight:700; letter-spacing:.01em;
+    color:var(--cyan-l); margin:2px 0 4px;
+  }
+  .important{
+    font-family:var(--sans); font-size:15px; line-height:1.35; text-align:center;
+    color:#2a0b40; background:linear-gradient(180deg,var(--gold-l),var(--gold));
+    border:2px solid var(--gold-d); border-radius:16px;
+    padding:11px 14px; margin:8px 0 4px; max-width:410px; width:100%;
+    box-shadow:0 0 20px rgba(255,210,63,.35);
+  }
+  .important b{color:#6a2a00;}
+  .important .hd{display:block; font-size:17px; font-weight:800; color:#6a2a00; margin-bottom:3px;}
+  .rsvp{
+    font-family:var(--sans); font-size:14.5px; line-height:1.32;
+    color:var(--cyan-l); background:rgba(46,243,255,.07);
+    border:1px dashed var(--cyan); border-radius:14px;
+    padding:9px 12px; margin:6px 0 2px; max-width:400px; width:100%;
+  }
+  .rsvp b{color:var(--pink-l);}
+
+  /* ambient disco decor */
+  .critters{position:absolute; inset:0; z-index:1; overflow:hidden; pointer-events:none;}
+  .critter{position:absolute; opacity:.22; filter:drop-shadow(0 0 6px currentColor);}
+  .critter svg{display:block;}
+  @keyframes bob{0%,100%{transform:translateY(0) rotate(var(--r,0deg));}50%{transform:translateY(-13px) rotate(var(--r2,4deg));}}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .btn{
+    display:inline-flex; align-items:center; gap:10px; justify-content:center;
+    font-family:var(--disco); font-size:18px; font-weight:900; letter-spacing:.03em;
+    color:#1a0b2e; text-decoration:none; cursor:pointer; text-transform:uppercase;
+    background:linear-gradient(180deg, var(--cyan-l), var(--cyan));
+    border:none; border-radius:40px;
+    padding:12px 24px; margin:8px 0 4px;
+    box-shadow:0 0 22px rgba(46,243,255,.45), inset 0 1px 0 rgba(255,255,255,.4);
+  }
+  .btn.pink{background:linear-gradient(180deg,var(--pink-l),var(--pink)); color:#fff; box-shadow:0 0 22px rgba(255,46,166,.5), inset 0 1px 0 rgba(255,255,255,.3);}
+  .btn:active{transform:translateY(1px);}
+
+  /* ---------- NAV BAR ---------- */
+  #nav{
+    position:fixed; left:0; right:0; bottom:0; z-index:20;
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:12px 14px calc(12px + env(safe-area-inset-bottom, 0px));
+    background:linear-gradient(0deg, rgba(10,4,20,.97), rgba(10,4,20,.75) 70%, transparent);
+  }
+  .navbtn{
+    flex:1; max-width:220px;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    font-family:var(--disco); font-size:17px; font-weight:900; text-transform:uppercase;
+    color:#fff; background:linear-gradient(180deg,#5a1fb0,#2e0e66);
+    border:1.5px solid var(--pink); border-radius:16px;
+    padding:15px 10px; cursor:pointer; min-height:56px;
+    box-shadow:0 4px 16px rgba(0,0,0,.5), 0 0 14px rgba(255,46,166,.25);
+    transition:opacity .2s, transform .1s;
+  }
+  .navbtn:active{transform:scale(.97);}
+  .navbtn[disabled]{opacity:.3; pointer-events:none;}
+  #counter{
+    flex:0 0 auto; color:var(--cyan-l); font-size:15px; font-weight:800;
+    min-width:56px; text-align:center; letter-spacing:.05em;
+    text-shadow:0 0 8px rgba(46,243,255,.5);
+  }
+
+  /* ---------- MUSIC BTN ---------- */
+  #music{
+    position:fixed; top:calc(9px + env(safe-area-inset-top, 0px)); right:10px; z-index:30;
+    display:flex; align-items:center; gap:6px;
+    background:rgba(20,8,36,.85); color:var(--cyan-l);
+    border:1px solid var(--cyan); border-radius:30px;
+    padding:7px 12px; font-family:var(--sans); font-weight:700; font-size:13px; cursor:pointer;
+    box-shadow:0 0 14px rgba(46,243,255,.35);
+  }
+  #music .msg{white-space:nowrap;}
+
+  #dots{position:fixed; top:calc(14px + env(safe-area-inset-top, 0px)); left:50%; transform:translateX(-50%); z-index:25; display:flex; gap:7px;}
+  #dots i{width:8px; height:8px; border-radius:50%; background:rgba(255,46,166,.3); transition:all .3s;}
+  #dots i.on{background:var(--pink-l); transform:scale(1.35); box-shadow:0 0 8px var(--pink);}
+
+  .speck{position:absolute; border-radius:50%; pointer-events:none; z-index:1;}
+
+  .neonSign{
+    font-family:var(--disco); text-transform:uppercase; letter-spacing:.06em;
+    display:inline-block; font-size:17px; font-weight:900;
+    padding:4px 2px; margin:4px 0 8px; color:#fff;
+    animation:flicker 3.2s ease-in-out infinite;
+  }
+  .neonSign.pink{ text-shadow:0 0 4px #fff, 0 0 10px var(--pink), 0 0 22px var(--pink), 0 0 42px var(--pink-d); }
+  .neonSign.cyan{ text-shadow:0 0 4px #fff, 0 0 10px var(--cyan), 0 0 22px var(--cyan), 0 0 42px var(--cyan-d); }
+  .neonSign.gold{ text-shadow:0 0 4px #fff, 0 0 10px var(--gold), 0 0 22px var(--gold), 0 0 42px var(--gold-d); }
+  @keyframes flicker{
+    0%,19%,21%,23%,80%,100%{opacity:1;}
+    20%,22%,79%{opacity:.72;}
+  }
+
+  .page.active .anim{animation:rise .7s both;}
+  .page.active .anim:nth-child(2){animation-delay:.08s;}
+  .page.active .anim:nth-child(3){animation-delay:.16s;}
+  .page.active .anim:nth-child(4){animation-delay:.24s;}
+  .page.active .anim:nth-child(5){animation-delay:.32s;}
+  .page.active .anim:nth-child(6){animation-delay:.40s;}
+  .page.active .anim:nth-child(7){animation-delay:.48s;}
+  @keyframes rise{from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:none;}}
+
+  @keyframes floaty{0%,100%{transform:translateY(0);}50%{transform:translateY(-9px);}}
+  .float{animation:floaty 4s ease-in-out infinite;}
+  @keyframes fall{to{transform:translateY(105vh) rotate(220deg);}}
+
+  @media (prefers-reduced-motion: reduce){
+    .float, .big50, .critter, .speck{animation:none !important;}
+    .page{transition:opacity .3s ease !important;}
+  }
+
+  @media(max-height:760px){
+    h1{font-size:25px;} .big50{font-size:88px;} p{font-size:15px;} .lead{font-size:16px;}
+    .inner{padding:34px 18px 10px;} h2{font-size:20px;margin:2px 0 6px;}
+    .hero{max-width:190px;} .frame-photo{max-width:230px;}
+  }
+  @media(max-height:680px){
+    .big50{font-size:74px;} .inner{padding:30px 16px 8px;}
+  }
+  @media(min-width:520px){ h1{font-size:35px;} }
+</style>
+</head>
+<body>
+
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="s-corner" viewBox="0 0 40 40">
+    <path d="M2 2 H16 M2 2 V16 M2 2 Q22 4 22 22 M2 22 Q4 22 4 22" fill="none" stroke="currentColor" stroke-width="1.6"/>
+    <circle cx="2" cy="2" r="2.4" fill="currentColor"/>
+  </symbol>
+  <symbol id="s-discoball" viewBox="0 0 100 100">
+    <defs>
+      <clipPath id="discoballClip"><circle cx="50" cy="46" r="34"/></clipPath>
+      <radialGradient id="discoballGlow" cx="50%" cy="46%" r="60%">
+        <stop offset="55%" stop-color="#ffffff" stop-opacity="0"/>
+        <stop offset="100%" stop-color="#ffffff" stop-opacity=".35"/>
+      </radialGradient>
+    </defs>
+    <circle cx="50" cy="46" r="40" fill="url(#discoballGlow)"/>
+    <line x1="50" y1="2" x2="50" y2="10" stroke="#c9b8ff" stroke-width="2"/>
+    <circle cx="50" cy="46" r="34.5" fill="#120826"/>
+    <g clip-path="url(#discoballClip)">
+      <rect x="32.1" y="13.0" width="7.8" height="7.8" rx="0.8" fill="#ff2ea6"/>
+      <rect x="40.7" y="13.0" width="7.8" height="7.8" rx="0.8" fill="#2ef3ff"/>
+      <rect x="49.3" y="13.0" width="7.8" height="7.8" rx="0.8" fill="#ffd23f"/>
+      <rect x="57.9" y="13.0" width="7.8" height="7.8" rx="0.8" fill="#8a3ffc"/>
+      <rect x="23.1" y="21.6" width="7.8" height="7.8" rx="0.8" fill="#8a3ffc"/>
+      <rect x="31.7" y="21.6" width="7.8" height="7.8" rx="0.8" fill="#3ddc84"/>
+      <rect x="40.3" y="21.6" width="7.8" height="7.8" rx="0.8" fill="#ff7a3d"/>
+      <rect x="48.9" y="21.6" width="7.8" height="7.8" rx="0.8" fill="#ff5ec4"/>
+      <rect x="57.5" y="21.6" width="7.8" height="7.8" rx="0.8" fill="#4fd1ff"/>
+      <rect x="66.1" y="21.6" width="7.8" height="7.8" rx="0.8" fill="#ff2ea6"/>
+      <rect x="18.6" y="30.2" width="7.8" height="7.8" rx="0.8" fill="#ff5ec4"/>
+      <rect x="27.2" y="30.2" width="7.8" height="7.8" rx="0.8" fill="#4fd1ff"/>
+      <rect x="35.8" y="30.2" width="7.8" height="7.8" rx="0.8" fill="#ff2ea6"/>
+      <rect x="44.4" y="30.2" width="7.8" height="7.8" rx="0.8" fill="#2ef3ff"/>
+      <rect x="53.0" y="30.2" width="7.8" height="7.8" rx="0.8" fill="#ffd23f"/>
+      <rect x="61.6" y="30.2" width="7.8" height="7.8" rx="0.8" fill="#8a3ffc"/>
+      <rect x="70.2" y="30.2" width="7.8" height="7.8" rx="0.8" fill="#3ddc84"/>
+      <rect x="78.8" y="30.2" width="7.8" height="7.8" rx="0.8" fill="#ff7a3d"/>
+      <rect x="16.8" y="38.8" width="7.8" height="7.8" rx="0.8" fill="#2ef3ff"/>
+      <rect x="25.4" y="38.8" width="7.8" height="7.8" rx="0.8" fill="#ffd23f"/>
+      <rect x="34.0" y="38.8" width="7.8" height="7.8" rx="0.8" fill="#8a3ffc"/>
+      <rect x="42.6" y="38.8" width="7.8" height="7.8" rx="0.8" fill="#3ddc84"/>
+      <rect x="51.2" y="38.8" width="7.8" height="7.8" rx="0.8" fill="#ff7a3d"/>
+      <rect x="59.8" y="38.8" width="7.8" height="7.8" rx="0.8" fill="#ff5ec4"/>
+      <rect x="68.4" y="38.8" width="7.8" height="7.8" rx="0.8" fill="#4fd1ff"/>
+      <rect x="77.0" y="38.8" width="7.8" height="7.8" rx="0.8" fill="#ff2ea6"/>
+      <rect x="17.2" y="47.4" width="7.8" height="7.8" rx="0.8" fill="#3ddc84"/>
+      <rect x="25.8" y="47.4" width="7.8" height="7.8" rx="0.8" fill="#ff7a3d"/>
+      <rect x="34.4" y="47.4" width="7.8" height="7.8" rx="0.8" fill="#ff5ec4"/>
+      <rect x="43.0" y="47.4" width="7.8" height="7.8" rx="0.8" fill="#4fd1ff"/>
+      <rect x="51.6" y="47.4" width="7.8" height="7.8" rx="0.8" fill="#ff2ea6"/>
+      <rect x="60.2" y="47.4" width="7.8" height="7.8" rx="0.8" fill="#2ef3ff"/>
+      <rect x="68.8" y="47.4" width="7.8" height="7.8" rx="0.8" fill="#ffd23f"/>
+      <rect x="77.4" y="47.4" width="7.8" height="7.8" rx="0.8" fill="#8a3ffc"/>
+      <rect x="19.8" y="56.0" width="7.8" height="7.8" rx="0.8" fill="#4fd1ff"/>
+      <rect x="28.4" y="56.0" width="7.8" height="7.8" rx="0.8" fill="#ff2ea6"/>
+      <rect x="37.0" y="56.0" width="7.8" height="7.8" rx="0.8" fill="#2ef3ff"/>
+      <rect x="45.6" y="56.0" width="7.8" height="7.8" rx="0.8" fill="#ffd23f"/>
+      <rect x="54.2" y="56.0" width="7.8" height="7.8" rx="0.8" fill="#8a3ffc"/>
+      <rect x="62.8" y="56.0" width="7.8" height="7.8" rx="0.8" fill="#3ddc84"/>
+      <rect x="71.4" y="56.0" width="7.8" height="7.8" rx="0.8" fill="#ff7a3d"/>
+      <rect x="25.4" y="64.6" width="7.8" height="7.8" rx="0.8" fill="#ffd23f"/>
+      <rect x="34.0" y="64.6" width="7.8" height="7.8" rx="0.8" fill="#8a3ffc"/>
+      <rect x="42.6" y="64.6" width="7.8" height="7.8" rx="0.8" fill="#3ddc84"/>
+      <rect x="51.2" y="64.6" width="7.8" height="7.8" rx="0.8" fill="#ff7a3d"/>
+      <rect x="59.8" y="64.6" width="7.8" height="7.8" rx="0.8" fill="#ff5ec4"/>
+      <rect x="68.4" y="64.6" width="7.8" height="7.8" rx="0.8" fill="#4fd1ff"/>
+      <rect x="37.5" y="73.2" width="7.8" height="7.8" rx="0.8" fill="#ff7a3d"/>
+      <rect x="46.1" y="73.2" width="7.8" height="7.8" rx="0.8" fill="#ff5ec4"/>
+      <rect x="54.7" y="73.2" width="7.8" height="7.8" rx="0.8" fill="#4fd1ff"/>
+    </g>
+    <circle cx="50" cy="46" r="34" fill="none" stroke="#1a0b2e" stroke-width="1.2"/>
+    <ellipse cx="40" cy="32" rx="13" ry="8" fill="#ffffff" opacity=".22"/>
+    <g fill="#ffffff">
+      <circle cx="33" cy="26" r="1.6"/>
+      <circle cx="63" cy="24" r="1.1"/>
+      <circle cx="71" cy="44" r="1.4"/>
+      <circle cx="26" cy="50" r="1.1"/>
+      <circle cx="47" cy="68" r="1.3"/>
+    </g>
+    <line x1="34" y1="90" x2="66" y2="90" stroke="#c9b8ff" stroke-width="2"/>
+    <line x1="42" y1="80" x2="34" y2="90" stroke="#c9b8ff" stroke-width="1.4"/>
+    <line x1="58" y1="80" x2="66" y2="90" stroke="#c9b8ff" stroke-width="1.4"/>
+  </symbol>
+  <symbol id="s-vinyl" viewBox="0 0 100 100">
+    <circle cx="50" cy="50" r="46" fill="none" stroke="currentColor" stroke-width="2.5"/>
+    <circle cx="50" cy="50" r="36" fill="none" stroke="currentColor" stroke-width="1" opacity=".6"/>
+    <circle cx="50" cy="50" r="27" fill="none" stroke="currentColor" stroke-width="1" opacity=".6"/>
+    <circle cx="50" cy="50" r="18" fill="none" stroke="currentColor" stroke-width="2"/>
+    <circle cx="50" cy="50" r="4" fill="currentColor"/>
+  </symbol>
+  <symbol id="s-cassette" viewBox="0 0 120 80">
+    <rect x="3" y="3" width="114" height="74" rx="8" fill="none" stroke="currentColor" stroke-width="3"/>
+    <circle cx="36" cy="40" r="14" fill="none" stroke="currentColor" stroke-width="3"/>
+    <circle cx="84" cy="40" r="14" fill="none" stroke="currentColor" stroke-width="3"/>
+    <circle cx="36" cy="40" r="4" fill="currentColor"/>
+    <circle cx="84" cy="40" r="4" fill="currentColor"/>
+    <rect x="30" y="58" width="60" height="8" rx="3" fill="none" stroke="currentColor" stroke-width="2.4"/>
+  </symbol>
+  <symbol id="s-note" viewBox="0 0 60 80">
+    <circle cx="14" cy="64" r="11" fill="currentColor"/>
+    <circle cx="44" cy="56" r="11" fill="currentColor"/>
+    <rect x="23" y="8" width="4" height="58" fill="currentColor"/>
+    <rect x="53" y="4" width="4" height="54" fill="currentColor"/>
+    <path d="M23 8 L57 4 V18 L23 22 Z" fill="currentColor"/>
+  </symbol>
+  <symbol id="s-star" viewBox="0 0 40 40">
+    <path d="M20 2 L24.5 15.5 L38 20 L24.5 24.5 L20 38 L15.5 24.5 L2 20 L15.5 15.5 Z" fill="currentColor"/>
+  </symbol>
+  <symbol id="s-boombox" viewBox="0 0 140 90">
+    <rect x="10" y="20" width="120" height="62" rx="8" fill="none" stroke="currentColor" stroke-width="3"/>
+    <circle cx="42" cy="54" r="19" fill="none" stroke="currentColor" stroke-width="3"/>
+    <circle cx="42" cy="54" r="8" fill="none" stroke="currentColor" stroke-width="2"/>
+    <circle cx="98" cy="54" r="19" fill="none" stroke="currentColor" stroke-width="3"/>
+    <circle cx="98" cy="54" r="8" fill="none" stroke="currentColor" stroke-width="2"/>
+    <rect x="20" y="4" width="14" height="20" rx="3" fill="none" stroke="currentColor" stroke-width="2.4"/>
+    <rect x="106" y="4" width="14" height="20" rx="3" fill="none" stroke="currentColor" stroke-width="2.4"/>
+    <path d="M34 10 Q70 -6 106 10" fill="none" stroke="currentColor" stroke-width="3"/>
+  </symbol>
+  <symbol id="s-mic" viewBox="0 0 60 100">
+    <rect x="19" y="4" width="22" height="42" rx="11" fill="none" stroke="currentColor" stroke-width="3"/>
+    <line x1="22" y1="15" x2="38" y2="15" stroke="currentColor" stroke-width="1.6" opacity=".65"/>
+    <line x1="22" y1="23" x2="38" y2="23" stroke="currentColor" stroke-width="1.6" opacity=".65"/>
+    <line x1="22" y1="31" x2="38" y2="31" stroke="currentColor" stroke-width="1.6" opacity=".65"/>
+    <path d="M9 42 a21 21 0 0 0 42 0" fill="none" stroke="currentColor" stroke-width="3"/>
+    <line x1="30" y1="63" x2="30" y2="82" stroke="currentColor" stroke-width="3"/>
+    <line x1="15" y1="82" x2="45" y2="82" stroke="currentColor" stroke-width="3"/>
+  </symbol>
+</svg>
+
+<div id="music" onclick="toggleMusic()">
+  <span id="mIcon">🎵</span><span class="msg" id="mMsg">Музыка</span>
+</div>
+<div id="dots"></div>
+
+<div id="scene">
+  <div id="book">
+
+    <!-- ===================== PAGE 1 — COVER ===================== -->
+    <section class="page" data-bg>
+      <div class="frame"></div>
+      <div class="props">
+        <svg class="p1" viewBox="0 0 100 100"><use href="#s-discoball"/></svg>
+        <svg class="p2" viewBox="0 0 120 80"><use href="#s-cassette"/></svg>
+        <svg class="p3" viewBox="0 0 60 100"><use href="#s-mic"/></svg>
+      </div>
+      <svg class="corner tl" viewBox="0 0 40 40"><use href="#s-corner"/></svg>
+      <svg class="corner tr" viewBox="0 0 40 40"><use href="#s-corner"/></svg>
+      <svg class="corner bl" viewBox="0 0 40 40"><use href="#s-corner"/></svg>
+      <svg class="corner br" viewBox="0 0 40 40"><use href="#s-corner"/></svg>
+      <div class="inner" style="justify-content:center;">
+        <p class="kicker anim">Семейная дискотека</p>
+        <svg class="anim float" style="width:80px;height:80px;color:var(--cyan);animation:floaty 4s ease-in-out infinite, spin 10s linear infinite;" viewBox="0 0 100 100"><use href="#s-discoball"/></svg>
+        <div class="big50 anim">50</div>
+        <div class="yearspill anim">лет</div>
+        <h1 class="anim" style="margin-top:4px;">Ольга</h1>
+        <p class="anim" style="font-family:var(--sans);font-size:19px;font-weight:600;letter-spacing:.04em;color:var(--pink-l);margin-top:2px;text-transform:uppercase;">Юбилей в стиле дискотеки 80-90х</p>
+        <div class="neonSign cyan anim">★ ★ ★ ДИСКОТЕКА ★ ★ ★</div>
+        <img class="hero anim" src="media/cover_olga.jpg" alt="Ольга" style="object-position:50% 18%; max-width:300px;">
+        <p class="anim soft" style="margin-top:10px;font-size:15.5px;letter-spacing:.18em;text-transform:uppercase;">14 ноября 2026</p>
+        <div class="btn pink anim" onclick="go(1)">Включить пластинку ›</div>
+      </div>
+    </section>
+
+    <!-- ===================== PAGE 2 — GREETING ===================== -->
+    <section class="page">
+      <div class="frame"></div>
+      <div class="props">
+        <svg class="p1" viewBox="0 0 100 100"><use href="#s-discoball"/></svg>
+        <svg class="p2" viewBox="0 0 120 80"><use href="#s-cassette"/></svg>
+        <svg class="p3" viewBox="0 0 60 100"><use href="#s-mic"/></svg>
+      </div>
+      <div class="inner">
+        <p class="greet anim">Дорогие друзья и родные!</p>
+        <h1 class="anim">Мне — 50!</h1>
+        <img class="photo anim" src="media/greeting_group.jpg" alt="Друзья и родные на празднике" style="width:100%; max-width:360px; margin:4px auto;">
+        <p class="lead anim">Круглая дата — отличный повод собраться всем вместе и как следует зажечь, совсем как в старые добрые времена. Приглашаю вас на свой юбилей!</p>
+        <div class="callout anim">Будет музыка, танцы, тёплая компания и атмосфера настоящей дискотеки 80-90х. Буду рада видеть каждого из вас на танцполе!</div>
+      </div>
+    </section>
+
+    <!-- ===================== PAGE 3 — CHILDHOOD ===================== -->
+    <section class="page">
+      <div class="frame"></div>
+      <div class="props">
+        <svg class="p1" viewBox="0 0 100 100"><use href="#s-discoball"/></svg>
+        <svg class="p2" viewBox="0 0 120 80"><use href="#s-cassette"/></svg>
+        <svg class="p3" viewBox="0 0 60 100"><use href="#s-mic"/></svg>
+      </div>
+      <div class="inner">
+        <p class="kicker anim">С чего всё начиналось</p>
+        <h2 class="anim">Первый трек</h2>
+        <div class="grid2 anim">
+          <figure class="cell tilt-l"><img class="photo" src="media/child_1.jpg" alt="Оля в детстве"><figcaption>Самое начало истории</figcaption></figure>
+          <figure class="cell tilt-r"><img class="photo" src="media/child_2.jpg" alt="Семья"><figcaption>В кругу семьи</figcaption></figure>
+        </div>
+        <div class="grid2 anim">
+          <figure class="cell tilt-r"><img class="photo" src="media/child_3.jpg" alt="Оля на новогоднем утреннике"><figcaption>Новогодняя звезда</figcaption></figure>
+          <figure class="cell tilt-l"><img class="photo" src="media/child_4.jpg" alt="Оля в младенчестве"><figcaption>Первые кадры плёнки</figcaption></figure>
+        </div>
+        <p class="anim">Здесь начинается моя история: мама Галя и папа Витя рядом, нарядное платье под новогодней ёлкой, первые самостоятельные шаги. С тех пор прошло много лет, но эти воспоминания греют мою душу.</p>
+        <div class="divider anim"><svg style="width:24px;height:24px;color:var(--pink)" viewBox="0 0 40 40"><use href="#s-star"/></svg></div>
+      </div>
+    </section>
+
+    <!-- ===================== PAGE 4 — TIME FLIES ===================== -->
+    <section class="page">
+      <div class="frame"></div>
+      <div class="props">
+        <svg class="p1" viewBox="0 0 100 100"><use href="#s-discoball"/></svg>
+        <svg class="p2" viewBox="0 0 120 80"><use href="#s-cassette"/></svg>
+        <svg class="p3" viewBox="0 0 60 100"><use href="#s-mic"/></svg>
+      </div>
+      <div class="inner">
+        <p class="kicker anim">Перематываем плёнку</p>
+        <h2 class="anim">Жизнь в лучших кадрах</h2>
+        <div class="fam anim">
+          <div class="row row1"><img src="media/time_2_wedding.jpg" alt="Свадьба"></div>
+          <div class="row row2">
+            <img src="media/time_3_arch.jpg" alt="Большая семья">
+            <img src="media/time_4_garden.jpg" alt="Семья в отпуске" style="object-position:50% 12%;">
+          </div>
+          <div class="row row1"><img src="media/time_5_beach.jpg" alt="Семья на море"></div>
+        </div>
+        <p class="anim" style="margin-top:2px;">Свадьба, море, дети, отпуска — целый альбом хитов. И на каждом развороте рядом — мой любимый муж Дмитрий и моя дружная большая семья.</p>
+      </div>
+    </section>
+
+    <!-- ===================== PAGE 6 — 90s FRIENDS ===================== -->
+    <section class="page">
+      <div class="frame"></div>
+      <div class="props">
+        <svg class="p1" viewBox="0 0 100 100"><use href="#s-discoball"/></svg>
+        <svg class="p2" viewBox="0 0 120 80"><use href="#s-cassette"/></svg>
+        <svg class="p3" viewBox="0 0 60 100"><use href="#s-mic"/></svg>
+      </div>
+      <div class="inner">
+        <p class="kicker anim">Танцпол девяностых</p>
+        <h2 class="anim">Хиты девяностых</h2>
+        <div class="neonSign cyan anim">♪ 90-Е ♪</div>
+        <svg class="anim" style="width:clamp(110px,34vw,152px);height:clamp(110px,34vw,152px);color:var(--pink);margin:4px 0 6px;animation:floaty 4s ease-in-out infinite, spin 9s linear infinite;" viewBox="0 0 100 100"><use href="#s-discoball"/></svg>
+        <div class="scatter anim">
+          <div class="srow r1">
+            <img class="r-a" src="media/friends_7.jpg" alt="Подруги в карнавальных костюмах">
+            <img class="r-b" src="media/friends_3.jpg" alt="Друзья">
+          </div>
+          <div class="srow r2">
+            <img class="r-c" src="media/friends_4.jpg" alt="Компания">
+          </div>
+          <div class="srow r3">
+            <img class="r-d" src="media/friends_5.jpg" alt="Танцы">
+            <img class="r-e" src="media/friends_6.jpg" alt="Девичник">
+          </div>
+        </div>
+        <p class="anim" style="font-size:24px; line-height:1.35; font-weight:600;">Эпоха, когда мы отдыхали на полную и верили в самое светлое будущее! Давайте снова почувствуем этот драйв!</p>
+      </div>
+    </section>
+
+    <!-- ===================== PAGE 7 — WHERE / WHEN ===================== -->
+    <section class="page">
+      <div class="frame"></div>
+      <div class="props">
+        <svg class="p1" viewBox="0 0 100 100"><use href="#s-discoball"/></svg>
+        <svg class="p2" viewBox="0 0 120 80"><use href="#s-cassette"/></svg>
+        <svg class="p3" viewBox="0 0 60 100"><use href="#s-mic"/></svg>
+      </div>
+      <div class="inner">
+        <p class="kicker anim">Приглашение</p>
+        <h2 class="anim">Встречаемся на танцполе!</h2>
+        <div class="neonSign pink anim">♫ Танцуй до утра ♫</div>
+        <img class="photo frame-photo anim" src="media/venue_sign.jpg" alt="Вывеска кафе Счастье есть">
+        <div class="evt anim">
+          <div class="dow">суббота</div>
+          <div class="date">14 ноября</div>
+          <div class="yr">2026 года</div>
+          <div class="hr"></div>
+          <div class="time">Жду вас в <b>16:30</b> в кафе-ресторане</div>
+          <div class="hr"></div>
+          <div class="place">«Счастье есть»</div>
+          <div class="addr">г. Серпухов, ул. Театральная, стр. 1</div>
+        </div>
+        <a class="btn anim" href="https://yandex.ru/maps/?text=Серпухов,+ул.+Театральная,+стр.+1,+Счастье+есть" target="_blank" rel="noopener">🧭&nbsp;Проложить маршрут</a>
+        <p class="note anim" style="margin:4px 0 0;">👆 Нажмите — откроется кафе на Яндекс.Картах</p>
+        <div class="rsvp anim" style="font-size:18px;line-height:1.4;"><b>📞 Просьба сообщить до 30 октября, сможете ли вы прийти, — чтобы я смогла забронировать для вас место за столом.</b></div>
+      </div>
+    </section>
+
+    <!-- ===================== PAGE 8 — DRESS CODE ===================== -->
+    <section class="page">
+      <div class="frame"></div>
+      <div class="props">
+        <svg class="p1" viewBox="0 0 100 100"><use href="#s-discoball"/></svg>
+        <svg class="p2" viewBox="0 0 120 80"><use href="#s-cassette"/></svg>
+        <svg class="p3" viewBox="0 0 60 100"><use href="#s-mic"/></svg>
+      </div>
+      <div class="inner">
+        <p class="kicker anim">Собираемся на дискотеку</p>
+        <h2 class="anim">Дресс-код: привет из СССР</h2>
+        <div class="neonSign gold anim">✦ Чем ярче, тем лучше ✦</div>
+        <div class="grid2 anim">
+          <figure class="cell tilt-l"><img class="photo" src="media/dress_group1.jpg" alt="Друзья и родные"></figure>
+          <figure class="cell tilt-r"><img class="photo" src="media/dress_group4.jpg" alt="Друзья и родные"></figure>
+        </div>
+        <div class="grid2 anim">
+          <figure class="cell tilt-r"><img class="photo" src="media/dress_group5.jpg" alt="Друзья и родные"></figure>
+          <figure class="cell tilt-l"><img class="photo" src="media/dress_group6.jpg" alt="Друзья и родные"></figure>
+        </div>
+        <ul class="checklist anim">
+          <li>Освежите в памяти любимые фильмы и песни той эпохи — они нам очень пригодятся</li>
+          <li>Приветствуется одежда в стиле СССР — надевайте всё, что душа пожелает</li>
+          <li>Берём с собой отличное настроение и широкие улыбки</li>
+          <li>Разминаем пластичность — танцевать будем много!</li>
+          <li>И, конечно, фирменный советский юмор</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ===================== PAGE 9 — FINALE ===================== -->
+    <section class="page">
+      <div class="frame"></div>
+      <div class="props">
+        <svg class="p1" viewBox="0 0 100 100"><use href="#s-discoball"/></svg>
+        <svg class="p2" viewBox="0 0 120 80"><use href="#s-cassette"/></svg>
+        <svg class="p3" viewBox="0 0 60 100"><use href="#s-mic"/></svg>
+      </div>
+      <svg class="corner tl" viewBox="0 0 40 40"><use href="#s-corner"/></svg>
+      <svg class="corner tr" viewBox="0 0 40 40"><use href="#s-corner"/></svg>
+      <svg class="corner bl" viewBox="0 0 40 40"><use href="#s-corner"/></svg>
+      <svg class="corner br" viewBox="0 0 40 40"><use href="#s-corner"/></svg>
+      <div class="inner" style="justify-content:center;">
+        <p class="kicker anim">А вечер обещает быть жарким!</p>
+        <div class="neonSign pink anim">★ ЗАЖИГАЕМ ★</div>
+        <img class="photo frame-photo anim" src="media/finale2.jpg" alt="Друзья и родные" style="max-width:360px; width:100%;">
+        <h1 class="anim" style="font-size:32px;margin-top:14px;">Ждём именно вас!</h1>
+        <p class="lead anim" style="font-size:22px;">Без вас праздник будет неполным. Приходите с открытым сердцем — обнимем, зажжём диско-шар и закружим в танце!</p>
+        <div class="divider anim"><svg style="width:120px;height:36px;color:var(--pink)" viewBox="0 0 140 90"><use href="#s-boombox"/></svg></div>
+        <p class="script anim" style="font-size:22px;">С любовью, Ольга и вся семья 💜</p>
+        <div class="btn pink anim" onclick="go(0)">↺ В начало</div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<nav id="nav">
+  <button class="navbtn" id="prevBtn" onclick="prev()">‹ Назад</button>
+  <div id="counter">1 / 9</div>
+  <button class="navbtn" id="nextBtn" onclick="next()">Далее ›</button>
+</nav>
+
+<audio id="song" loop preload="none" src="media/song.mp3"></audio>
+
+<script>
+  const pages=[...document.querySelectorAll('.page')];
+  const total=pages.length;
+  let cur=0, musicOn=false, started=false;
+  const song=document.getElementById('song');
+  const counter=document.getElementById('counter');
+  const prevBtn=document.getElementById('prevBtn');
+  const nextBtn=document.getElementById('nextBtn');
+  const dots=document.getElementById('dots');
+
+  pages.forEach((_,i)=>{const d=document.createElement('i'); dots.appendChild(d);});
+  const dotEls=[...dots.children];
+
+  // ambient disco decor on every page
+  (function critters(){
+    const types=[
+      {id:'s-vinyl', vb:'0 0 100 100', w:42},
+      {id:'s-note',  vb:'0 0 60 80', w:32},
+      {id:'s-star',  vb:'0 0 40 40', w:22},
+      {id:'s-cassette', vb:'0 0 120 80', w:50},
+      {id:'s-discoball', vb:'0 0 100 100', w:38},
+      {id:'s-boombox', vb:'0 0 140 90', w:56},
+      {id:'s-note',  vb:'0 0 60 80', w:26},
+      {id:'s-star',  vb:'0 0 40 40', w:16},
+    ];
+    const colors=['--pink','--cyan','--gold'];
+    const spots=[
+      {t:'5%',l:'2%'},{t:'6%',l:'80%'},{t:'20%',l:'92%'},
+      {t:'36%',l:'-5%'},{t:'50%',l:'90%'},{t:'58%',l:'5%'},
+      {t:'72%',l:'88%'},{t:'80%',l:'2%'},{t:'88%',l:'74%'},
+      {t:'30%',l:'8%'},{t:'94%',l:'40%'},{t:'14%',l:'45%'}
+    ];
+    pages.forEach((pg,pi)=>{
+      const c=document.createElement('div'); c.className='critters';
+      const n=7+(pi%3);
+      for(let i=0;i<n;i++){
+        const t=types[(pi*3+i)%types.length];
+        const sp=spots[(pi*2+i)%spots.length];
+        const vbp=t.vb.split(' ').map(Number);
+        const scale=0.85+((i*3+pi*2)%5)/9;
+        const w=Math.round(t.w*scale), h=Math.round(w*vbp[3]/vbp[2]);
+        const flip=(i%2)?-1:1;
+        const dur=(6+((i+pi)%5)).toFixed(1);
+        const delay=((i*1.3+pi*0.6)%5).toFixed(1);
+        const col='var('+colors[(pi+i)%colors.length]+')';
+        const el=document.createElement('div'); el.className='critter';
+        el.style.top=sp.t; el.style.left=sp.l; el.style.color=col;
+        el.style.setProperty('--r',((i%2)?-6:6)+'deg');
+        el.style.setProperty('--r2',((i%2)?-2:9)+'deg');
+        el.style.animation=`bob ${dur}s ease-in-out ${delay}s infinite`;
+        el.innerHTML=`<svg width="${w}" height="${h}" viewBox="${t.vb}" style="transform:scaleX(${flip})"><use href="#${t.id}"/></svg>`;
+        c.appendChild(el);
+      }
+      pg.insertBefore(c, pg.querySelector('.inner'));
+    });
+  })();
+
+  // floating specks
+  (function specks(){
+    const scene=document.getElementById('scene');
+    const cols=['rgba(255,46,166,.8)','rgba(46,243,255,.8)','rgba(255,210,63,.8)'];
+    for(let i=0;i<9;i++){
+      const s=document.createElement('div'); s.className='speck';
+      const sz=3+Math.random()*5;
+      const col=cols[i%cols.length];
+      s.style.width=s.style.height=sz+'px';
+      s.style.left=(Math.random()*100)+'%';
+      s.style.top=(-10+Math.random()*20)+'%';
+      s.style.opacity=.4+Math.random()*.4;
+      s.style.background=`radial-gradient(circle,${col},transparent 70%)`;
+      s.style.animation=`fall ${9+Math.random()*8}s linear ${Math.random()*6}s infinite`;
+      scene.appendChild(s);
+    }
+  })();
+
+  function render(){
+    pages.forEach((p,i)=>{
+      p.classList.remove('active','prev','next');
+      if(i===cur) p.classList.add('active');
+      else if(i<cur) p.classList.add('prev');
+      else p.classList.add('next');
+    });
+    counter.textContent=(cur+1)+' / '+total;
+    prevBtn.disabled=cur===0;
+    nextBtn.disabled=cur===total-1;
+    dotEls.forEach((d,i)=>d.classList.toggle('on',i===cur));
+    document.getElementById('music').style.display=(cur===0||cur===total-1)?'none':'flex';
+    const inner=pages[cur].querySelector('.inner'); if(inner) inner.scrollTop=0;
+    setTimeout(updateScrollHints, 60);
+  }
+
+  // scroll-down hint: shows only when a page's content actually overflows the screen
+  (function(){
+    pages.forEach(pg=>{
+      const inner=pg.querySelector('.inner');
+      if(!inner) return;
+      const hint=document.createElement('div');
+      hint.className='scrollhint';
+      hint.innerHTML='<svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
+      pg.appendChild(hint);
+      pg._hint=hint;
+      inner.addEventListener('scroll', ()=>updateHintFor(pg), {passive:true});
+    });
+  })();
+  function updateHintFor(pg){
+    const inner=pg.querySelector('.inner');
+    if(!inner || !pg._hint) return;
+    const overflow = inner.scrollHeight - inner.clientHeight > 16;
+    const nearBottom = inner.scrollTop + inner.clientHeight >= inner.scrollHeight - 16;
+    pg._hint.classList.toggle('show', overflow && !nearBottom);
+  }
+  function updateScrollHints(){ pages.forEach(updateHintFor); }
+  window.addEventListener('resize', updateScrollHints);
+  window.addEventListener('load', updateScrollHints);
+  function go(i){ cur=Math.max(0,Math.min(total-1,i)); startMusic(); render(); }
+  function next(){ if(cur<total-1){cur++; startMusic(); render();} }
+  function prev(){ if(cur>0){cur--; render();} }
+
+  function startMusic(){
+    if(started) return; started=true;
+    song.play().then(()=>{ musicOn=true; updMusic(); })
+               .catch(()=>{ musicOn=false; updMusic(); });
+  }
+  function toggleMusic(){
+    if(song.paused){ song.play().then(()=>{musicOn=true;started=true;updMusic();}).catch(()=>{}); }
+    else { song.pause(); musicOn=false; updMusic(); }
+  }
+  function updMusic(){
+    document.getElementById('mIcon').textContent=musicOn?'🔊':'🔈';
+    document.getElementById('mMsg').textContent=musicOn?'Играет':'Музыка';
+  }
+
+  let x0=null;
+  const book=document.getElementById('book');
+  book.addEventListener('touchstart',e=>{x0=e.touches[0].clientX;},{passive:true});
+  book.addEventListener('touchend',e=>{
+    if(x0===null) return;
+    const dx=e.changedTouches[0].clientX-x0;
+    if(Math.abs(dx)>50){ dx<0?next():prev(); }
+    x0=null;
+  },{passive:true});
+  document.addEventListener('keydown',e=>{
+    if(e.key==='ArrowRight') next();
+    if(e.key==='ArrowLeft') prev();
+  });
+
+  render();
+</script>
+
+</body>
+</html>
